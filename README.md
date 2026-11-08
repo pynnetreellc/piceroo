@@ -14,8 +14,8 @@ In a day deck you swipe left to trash a photo and right to keep it. In a burst d
 
 ## How deleting works
 
-- **Trash, not instant delete.** At the end of each deck, Android asks you once to move that deck's picks to the phone's trash. Trashed items can be restored for 30 days.
-- **Google Photos keeps its cloud copies.** Backup only copies from the phone to the cloud. Deleting on the phone doesn't remove the backed-up copy. To delete those, use **Share cloud cleanup list** on the home screen. It lists everything you trashed, grouped by date.
+- **Deleting is permanent.** At the end of each deck you review your picks and can rescue any of them. Then Android asks you once to delete them. After that there's no undo on the phone. (Early builds used Android's trash instead, but Samsung Gallery ignores it and the files kept using space. If photos from those builds are still in Android's trash, the home screen offers to finish deleting them.)
+- **Google Photos keeps its cloud copies.** Backup only copies from the phone to the cloud. Deleting on the phone doesn't remove the backed-up copy. To delete those, use **Share cloud cleanup list** on the home screen. It lists everything you deleted, grouped by date.
 - **Kept photos don't come back.** Once you finish a deck, the photos you kept won't appear in future decks.
 
 ## Building
@@ -38,7 +38,7 @@ Requires Android 11 or newer.
 | `data/Clusterer.kt` | Sorts the photos and videos into decks |
 | `data/GameStore.kt` | Points, streaks, kept photos, and the cloud cleanup list |
 | `AppViewModel.kt` | App state and which screen is showing |
-| `MainActivity.kt` | Permissions and the trash confirmation |
+| `MainActivity.kt` | Permissions and the delete confirmation |
 | `ui/PlayScreen.kt` | The swipe cards, the burst picker, and the end-of-round summary |
 
 ## Credits

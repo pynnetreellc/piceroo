@@ -23,7 +23,7 @@ sealed interface Screen {
     data class Celebrate(val result: RoundResult) : Screen
 }
 
-/** A round waiting on Android's "Move to trash?" confirmation dialog. */
+/** A round waiting on Android's "Delete these?" confirmation dialog. */
 data class PendingRound(val trash: List<MediaItem>, val keep: List<MediaItem>)
 
 /**
@@ -46,11 +46,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var pending: PendingRound? = null
         private set
 
+    /** Photos earlier builds moved to Android's trash, which still use space until deleted. */
+    var leftovers by mutableStateOf<List<MediaItem>>(emptyList())
+        private set
+
     fun load() {
         loading = true
         viewModelScope.launch {
             // Reading thousands of rows is slow-ish, so do it off the UI thread.
             allItems = withContext(Dispatchers.IO) { repo.loadAll() }
+            leftovers = withContext(Dispatchers.IO) { repo.loadTrashed(store.deletedKeys()) }
             rebuildDecks()
             loading = false
         }
@@ -76,7 +81,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         screen = Screen.Home
     }
 
-    /** Called when a round ends. Returns true if the trash dialog needs to be shown. */
+    /** Called when a round ends. Returns true if the delete dialog needs to be shown. */
     fun finishRound(trash: List<MediaItem>, keep: List<MediaItem>): Boolean {
         if (trash.isEmpty()) {
             complete(trash, keep)
@@ -86,8 +91,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return true
     }
 
-    /** Android tells us whether you tapped "Allow" on the trash dialog. */
-    fun onTrashResult(confirmed: Boolean) {
+    /** Android tells us whether you tapped "Allow" on the delete dialog. */
+    fun onDeleteResult(confirmed: Boolean) {
         val round = pending ?: return
         pending = null
         if (confirmed) complete(round.trash, round.keep)

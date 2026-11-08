@@ -295,7 +295,7 @@ private fun BurstPlay(deck: Deck, onFinish: (List<MediaItem>, List<MediaItem>) -
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         LinearProgressIndicator(progress = { burstIndex / bursts.size.toFloat() }, modifier = Modifier.fillMaxWidth())
         Text(
-            "Burst ${burstIndex + 1} of ${bursts.size} · tap the keepers · long-press to view",
+            "Burst ${burstIndex + 1} of ${bursts.size} · tap to keep or unkeep · long-press to view",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(vertical = 8.dp),
         )
@@ -340,19 +340,21 @@ private fun BurstPlay(deck: Deck, onFinish: (List<MediaItem>, List<MediaItem>) -
         }
 
         val toTrash = burst.filter { it.id !in selected }
+        // With nothing selected, the button trashes the whole burst.
         Button(
             onClick = {
                 trashed += toTrash
                 kept += burst.filter { it.id in selected }
                 burstIndex++
             },
-            enabled = selected.isNotEmpty(),
+            colors = if (selected.isEmpty()) ButtonDefaults.buttonColors(containerColor = TrashRed, contentColor = Color.White)
+            else ButtonDefaults.buttonColors(),
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(52.dp),
-        ) { Text("Keep ${selected.size}, trash ${toTrash.size}") }
-        TextButton(
-            onClick = { kept += burst; burstIndex++ },
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        ) { Text("Keep them all") }
+        ) { Text(if (selected.isEmpty()) "Trash all ${burst.size}" else "Keep ${selected.size}, trash ${toTrash.size}") }
+        Row(Modifier.align(Alignment.CenterHorizontally)) {
+            TextButton(onClick = { kept += burst; burstIndex++ }) { Text("Keep them all") }
+            TextButton(onClick = { trashed += burst; burstIndex++ }) { Text("Trash them all", color = TrashRed) }
+        }
     }
 }
 
@@ -377,7 +379,7 @@ private fun RoundSummary(
         }
         Text(
             if (trash.isEmpty()) "You kept everything. Still counts!"
-            else "${trash.size} to trash · ${trash.sumOf { it.size }.formatBytes()}. Tap any to rescue it.",
+            else "${trash.size} to delete · ${trash.sumOf { it.size }.formatBytes()}. Tap any to rescue it. No undo after this.",
             modifier = Modifier.padding(vertical = 8.dp),
         )
         LazyVerticalGrid(
@@ -401,7 +403,7 @@ private fun RoundSummary(
             colors = if (trash.isEmpty()) ButtonDefaults.buttonColors()
             else ButtonDefaults.buttonColors(containerColor = TrashRed, contentColor = Color.White),
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp).height(56.dp),
-        ) { Text(if (trash.isEmpty()) "Finish round" else "Move ${trash.size} to trash") }
+        ) { Text(if (trash.isEmpty()) "Finish round" else "Delete ${trash.size} for good") }
         OutlinedButton(onClick = onRedo, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             Text("Start this deck over")
         }

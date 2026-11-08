@@ -51,6 +51,7 @@ fun HomeScreen(
     partialAccess: Boolean,
     onFixAccess: () -> Unit,
     onShareList: () -> Unit,
+    onDeleteLeftovers: () -> Unit,
 ) {
     val decks = vm.decks
     val bySection = remember(decks) { decks.groupBy { it.kind } }
@@ -87,6 +88,21 @@ fun HomeScreen(
                     Column(Modifier.padding(16.dp)) {
                         Text("Piceroo can only see the photos you picked.")
                         TextButton(onClick = onFixAccess) { Text("Allow all photos") }
+                    }
+                }
+            }
+
+            val leftovers = vm.leftovers
+            if (leftovers.isNotEmpty()) item {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            "${leftovers.size} photos from earlier rounds are hidden in Android's trash " +
+                                "but still on your phone (${leftovers.sumOf { it.size }.formatBytes()}).",
+                        )
+                        Button(onClick = onDeleteLeftovers, Modifier.padding(top = 8.dp)) {
+                            Text("Finish deleting them")
+                        }
                     }
                 }
             }
@@ -137,8 +153,8 @@ fun HomeScreen(
             item {
                 Column(Modifier.padding(top = 24.dp)) {
                     Text(
-                        "Trashed items stay in your phone's trash for 30 days. " +
-                            "Google Photos keeps its backed-up copies — use the list below " +
+                        "Deleted photos are gone from your phone right away. " +
+                            "Google Photos keeps its backed-up copies, so use the list below " +
                             "to find and delete those too.",
                         style = MaterialTheme.typography.bodySmall,
                     )

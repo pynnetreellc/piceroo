@@ -100,7 +100,7 @@ class GameStore(context: Context) {
         return if (last == today || last == today.minusDays(1)) prefs.getInt("streak", 0) else 0
     }
 
-    /** Remembers what was trashed, so you can find the backed-up copies in Google Photos later. */
+    /** Remembers what was deleted, so you can find the backed-up copies in Google Photos later. */
     private fun appendLog(items: List<MediaItem>) {
         val zone = ZoneId.systemDefault()
         logFile.appendText(items.joinToString("") {
@@ -109,7 +109,16 @@ class GameStore(context: Context) {
         })
     }
 
-    /** The trash log grouped by date, as plain text you can share to yourself. */
+    /** (file name, size) of everything Piceroo has deleted, to recognize its own files later. */
+    fun deletedKeys(): Set<Pair<String, Long>> {
+        if (!logFile.exists()) return emptySet()
+        return logFile.readLines().mapNotNull { line ->
+            val parts = line.split(',')
+            if (parts.size >= 3) parts[1] to (parts[2].toLongOrNull() ?: return@mapNotNull null) else null
+        }.toSet()
+    }
+
+    /** The deleted-photos log grouped by date, as plain text you can share to yourself. */
     fun cloudCleanupList(): String {
         if (!logFile.exists()) return ""
         return logFile.readLines()

@@ -13,6 +13,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.piceroo.app.data.MediaItem
 import com.piceroo.app.ui.CelebrateScreen
 import com.piceroo.app.ui.HomeScreen
 import com.piceroo.app.ui.PermissionScreen
@@ -42,11 +44,14 @@ class MainActivity : ComponentActivity() {
             PicerooTheme {
                 val vm: AppViewModel = viewModel()
 
-                // Android shows its own "Allow Piceroo to move N items to trash?" dialog;
-                // this receives your answer.
-                val trashLauncher = rememberLauncherForActivityResult(
+                // Android shows its own "Allow Piceroo to delete N items?" dialog;
+                // these receive your answer.
+                val deleteLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.StartIntentSenderForResult()
-                ) { result -> vm.onTrashResult(result.resultCode == RESULT_OK) }
+                ) { result -> vm.onDeleteResult(result.resultCode == RESULT_OK) }
+                val leftoverLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.StartIntentSenderForResult()
+                ) { result -> if (result.resultCode == RESULT_OK) vm.load() }
 
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
@@ -68,6 +73,7 @@ class MainActivity : ComponentActivity() {
                         partialAccess = access == Access.PARTIAL,
                         onFixAccess = { permissionLauncher.launch(mediaPermissions()) },
                         onShareList = { shareText(vm.cloudCleanupList()) },
+                        onDeleteLeftovers = { requestDelete(vm.leftovers, leftoverLauncher) },
                     )
                     is Screen.Play -> {
                         BackHandler { vm.goHome() }
@@ -75,19 +81,10 @@ class MainActivity : ComponentActivity() {
                             deck = s.deck,
                             onExit = vm::goHome,
                             onFinish = { trash, keep ->
-                                if (vm.finishRound(trash, keep)) {
-                                    try {
-                                        val request = MediaStore.createTrashRequest(
-                                            contentResolver, trash.map { it.uri }, true
-                                        )
-                                        trashLauncher.launch(IntentSenderRequest.Builder(request.intentSender).build())
-                                    } catch (e: Exception) {
-                                        // Usually means a photo was already deleted elsewhere.
-                                        vm.onTrashResult(false)
-                                        Toast.makeText(this, "Couldn't trash those — reloading", Toast.LENGTH_SHORT).show()
-                                        vm.goHome()
-                                        vm.load()
-                                    }
+                                if (vm.finishRound(trash, keep) && !requestDelete(trash, deleteLauncher)) {
+                                    vm.onDeleteResult(false)
+                                    vm.goHome()
+                                    vm.load()
                                 }
                             },
                         )
@@ -107,9 +104,27 @@ class MainActivity : ComponentActivity() {
         resumeCount++
     }
 
+    /**
+     * Asks Android to permanently delete these items. (Earlier builds used createTrashRequest,
+     * but Samsung Gallery ignores Android's trash and the files kept using space for 30 days.)
+     * Returns false if the request couldn't be made, usually because a photo was already
+     * deleted elsewhere.
+     */
+    private fun requestDelete(
+        items: List<MediaItem>,
+        launcher: ActivityResultLauncher<IntentSenderRequest>,
+    ): Boolean = try {
+        val request = MediaStore.createDeleteRequest(contentResolver, items.map { it.uri })
+        launcher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+        true
+    } catch (e: Exception) {
+        Toast.makeText(this, "Couldn't delete those. Reloading.", Toast.LENGTH_SHORT).show()
+        false
+    }
+
     private fun shareText(text: String) {
         if (text.isBlank()) {
-            Toast.makeText(this, "Nothing trashed yet", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Nothing deleted yet", Toast.LENGTH_SHORT).show()
             return
         }
         val send = Intent(Intent.ACTION_SEND).setType("text/plain")
