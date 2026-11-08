@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -61,6 +62,7 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(access, resumeCount) {
                     if (access != Access.NONE && vm.screen == Screen.Home) vm.load()
                 }
+                LaunchedEffect(Unit) { vm.checkForUpdate() }
 
                 if (access == Access.NONE) {
                     PermissionScreen(onGrant = { permissionLauncher.launch(mediaPermissions()) })
@@ -74,6 +76,8 @@ class MainActivity : ComponentActivity() {
                         onFixAccess = { permissionLauncher.launch(mediaPermissions()) },
                         onShareList = { shareText(vm.cloudCleanupList()) },
                         onDeleteLeftovers = { requestDelete(vm.leftovers, leftoverLauncher) },
+                        // The browser downloads the APK; tapping the download installs it as an update.
+                        onGetUpdate = { url -> startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
                     )
                     is Screen.Play -> {
                         BackHandler { vm.goHome() }

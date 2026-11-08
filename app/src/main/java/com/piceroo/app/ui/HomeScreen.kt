@@ -52,6 +52,7 @@ fun HomeScreen(
     onFixAccess: () -> Unit,
     onShareList: () -> Unit,
     onDeleteLeftovers: () -> Unit,
+    onGetUpdate: (apkUrl: String) -> Unit,
 ) {
     val decks = vm.decks
     val bySection = remember(decks) { decks.groupBy { it.kind } }
@@ -77,6 +78,22 @@ fun HomeScreen(
                     Column(Modifier.padding(start = 12.dp)) {
                         Text("Piceroo", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black)
                         Text(stringResource(R.string.tagline), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+
+            vm.update?.let { update ->
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            BouncingRoo(36.dp)
+                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                                Text("Update ready", fontWeight = FontWeight.Bold)
+                                Text("Build ${update.build} is out.", style = MaterialTheme.typography.bodySmall)
+                            }
+                            TextButton(onClick = vm::dismissUpdate) { Text("Later") }
+                            Button(onClick = { onGetUpdate(update.apkUrl) }) { Text("Get it") }
+                        }
                     }
                 }
             }

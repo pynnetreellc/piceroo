@@ -10,10 +10,13 @@ android {
 
     defaultConfig {
         applicationId = "com.piceroo.app"
-        minSdk = 30 // Android 11: first version with MediaStore trash requests
+        minSdk = 30 // Android 11: first version with MediaStore delete requests
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2"
+        // GitHub Actions numbers each run; using it as the version means release "build-N"
+        // is exactly versionCode N, which is how the in-app update check compares them.
+        val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "build $build"
     }
 
     // A fixed key checked into the repo, so every CI build is signed the same way

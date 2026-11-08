@@ -26,6 +26,8 @@ You don't need Android Studio. Every push to `main` triggers GitHub Actions, whi
 2. Tap **Piceroo.apk**.
 3. Allow your browser to install apps when Android asks.
 
+After that, Piceroo checks GitHub each time it opens. When a newer build exists, the home screen shows **Update ready**. Tap **Get it**, let the download finish, and tap the download to install it over the current version. The check only asks GitHub for the latest release number. Nothing about your photos is sent.
+
 Every build is signed with the same key, `app/piceroo-signing.p12`. That's why a new build installs over the old one and your stats are kept. The key is only for installing builds yourself. Don't reuse it for a Play Store release.
 
 Requires Android 11 or newer.

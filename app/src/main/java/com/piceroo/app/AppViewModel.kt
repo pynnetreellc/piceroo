@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.piceroo.app.data.AppUpdate
 import com.piceroo.app.data.Clusterer
 import com.piceroo.app.data.Deck
 import com.piceroo.app.data.DeckKind
@@ -13,6 +14,7 @@ import com.piceroo.app.data.GameStore
 import com.piceroo.app.data.MediaItem
 import com.piceroo.app.data.MediaRepository
 import com.piceroo.app.data.RoundResult
+import com.piceroo.app.data.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,6 +51,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Photos earlier builds moved to Android's trash, which still use space until deleted. */
     var leftovers by mutableStateOf<List<MediaItem>>(emptyList())
         private set
+
+    /** Set when GitHub has a newer build than the one installed. */
+    var update by mutableStateOf<AppUpdate?>(null)
+        private set
+    private var checkedForUpdate = false
+
+    /** Checks GitHub once per app launch. */
+    fun checkForUpdate() {
+        if (checkedForUpdate) return
+        checkedForUpdate = true
+        val app = getApplication<Application>()
+        val installed = app.packageManager.getPackageInfo(app.packageName, 0).longVersionCode
+        viewModelScope.launch {
+            update = withContext(Dispatchers.IO) { UpdateChecker.check(installed) }
+        }
+    }
+
+    fun dismissUpdate() {
+        update = null
+    }
 
     fun load() {
         loading = true
